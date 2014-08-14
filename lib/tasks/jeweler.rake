@@ -1,4 +1,7 @@
-require 'jeweler'
+begin
+  require 'jeweler'
+rescue LoadError
+end
 
 Jeweler::Tasks.new do |s|
   s.name = "acts_as_solr_reloaded"
@@ -9,4 +12,4 @@ Jeweler::Tasks.new do |s|
   s.authors = ["Diego Carrion"]
   s.files =  FileList["[A-Z]*", "{bin,generators,config,lib,solr}/**/*"] +
     FileList["test/**/*"].reject {|f| f.include?("test/log")}.reject {|f| f.include?("test/tmp")}
-end
+end if defined? Jeweler
