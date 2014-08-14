@@ -170,7 +170,7 @@ module ActsAsSolr #:nodoc:
         results.update :start => header['params']['start']
       end
 
-      results.update(:facets => {'facet_fields' => []}) if options[:facets]
+      results.update(:facets => {'facet_fields' => {}}) if options[:facets]
       return SearchResults.new(results) if solr_data.total_hits == 0
 
       results.update(:facets => solr_data.data['facet_counts']) if options[:facets]
