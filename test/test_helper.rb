@@ -16,7 +16,7 @@ require 'mongo_mapper'
 
 class Rails
   def self.root
-    RAILS_ROOT
+    Rails.root
   end
 
   def self.env
@@ -26,8 +26,7 @@ end
 
 MongoMapper.database = "acts_as_solr_reloaded-test"
 
-RAILS_ROOT = File.dirname(__FILE__) unless defined? RAILS_ROOT
-RAILS_ENV  = 'test' unless defined? RAILS_ENV
+RAILS_ENV = 'test' unless defined? RAILS_ENV
 ENV["RAILS_ENV"] = "test"
 
 require File.expand_path(File.dirname(__FILE__) + '/../config/solr_environment')

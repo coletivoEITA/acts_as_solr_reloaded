@@ -1,3 +1,5 @@
+require 'rake/testtask'
+require 'rdoc/task'
 
 Rake::RDocTask.new do |rd|
   rd.main = "README.rdoc"
