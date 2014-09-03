@@ -184,7 +184,7 @@ module ActsAsSolr #:nodoc:
       highlighted = {}
       solr_data.highlighting.map do |x,y|
         e={}
-        y1=y.map{|x1,y1| e[x1.gsub(/_[^_]*/,"")]=y1} unless y.nil?
+        y.map{ |x1,y1| e[x1.gsub(/_[^_]*/,"")]=y1 } unless y.nil?
         highlighted[x.gsub(/[^:]*:/,"").to_i]=e
       end unless solr_data.highlighting.nil?
       results.update(:highlights => highlighted)
@@ -201,8 +201,12 @@ module ActsAsSolr #:nodoc:
         ids.collect{ |id| ActsAsSolr::LazyDocument.new(id, self) }
       elsif options[:results_format] == :objects
         find_options = options[:sql_options] || {}
-        find_options[:conditions] = self.send :merge_conditions, {self.primary_key => ids}, (find_options[:conditions] || [])
-        result = self.all(find_options) || []
+        if Rails::VERSION::STRING >= '3.0'
+          result = self.scoped(find_options).where(self.primary_key => ids).all
+        else
+          find_options[:conditions] = self.send :merge_conditions, {self.primary_key => ids}, (find_options[:conditions] || [])
+          result = self.all(find_options)
+        end
         result = reorder(result, ids) unless find_options[:order]
         result
       elsif options[:results_format] == :none
