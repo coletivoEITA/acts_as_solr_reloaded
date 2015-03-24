@@ -1,11 +1,10 @@
 source 'https://rubygems.org'
 
-gem 'ruby-debug'
 gem 'rdoc'
 
 gem 'jeweler'
 
-gem 'rails', '2.3.5'
+gem 'rails', '~> 3.2.21'
 
 gem 'sqlite3'
 

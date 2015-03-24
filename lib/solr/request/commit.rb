@@ -14,15 +14,13 @@ class Solr::Request::Commit < Solr::Request::Update
 
   def initialize(options={})
     @wait_searcher = options[:wait_searcher] || true
-    @wait_flush = options[:wait_flush] || true
   end
 
 
   def to_s
     e = Solr::XML::Element.new('commit')
     e.attributes['waitSearcher'] = @wait_searcher ? 'true' : 'false'
-    e.attributes['waitFlush'] = @wait_flush ? 'true' : 'false'
-    
+
     e.to_s
   end
 

@@ -11,9 +11,12 @@ module ActsAsSolr #:nodoc:
         :offset, :per_page, :limit, :page,
         :query_fields, :default_field,
       ]
-      query_options = {}
+      # defaults
       options[:results_format] ||= :objects
       options[:default_field] ||= 'text'
+
+      query_options = {}
+      query_options[:default_field] = options[:default_field]
 
       return if query.nil?
       raise "Query should be a string" unless query.is_a?(String)
@@ -176,9 +179,9 @@ module ActsAsSolr #:nodoc:
 
       results.update(:facets => solr_data.data['facet_counts']) if options[:facets]
 
-      ids = solr_data.hits.collect {|doc| doc["#{solr_configuration[:primary_key_field]}"]}.flatten
-      result = find_objects(ids, options)
-      results.update(:docs => result)
+      ids = solr_data.hits.collect{ |doc| doc["#{solr_configuration[:primary_key_field]}"] }.flatten
+      result = find_objects ids, options
+      results.update :ids => ids, :docs => result
 
       add_scores(result, solr_data) if options[:results_format] == :objects and options[:scores]
 
@@ -253,22 +256,15 @@ module ActsAsSolr #:nodoc:
     def add_scores(results, solr_data)
       with_score = []
       solr_data.hits.each do |doc|
-        with_score.push([doc["score"],
-          results.find {|record| scorable_record?(record, doc) }])
+        record = results.find do |result|
+          doc_id = doc["#{solr_configuration[:primary_key_field]}"].first rescue nil
+          record_id(result).to_s == doc_id
+        end
+        with_score.push [doc["score"], record]
       end
-      with_score.each do |score, object|
-        class << object; attr_accessor :solr_score; end
-        object.solr_score = score
-      end
-    end
-
-    def scorable_record?(record, doc)
-      doc_id = doc["#{solr_configuration[:primary_key_field]}"]
-      if doc_id.nil?
-        doc_id = doc["id"]
-        "#{record.class.name}:#{record_id(record)}" == doc_id.first.to_s
-      else
-        record_id(record).to_s == doc_id.to_s
+      with_score.each do |score, record|
+        next unless record
+        record.solr_score = score
       end
     end
 

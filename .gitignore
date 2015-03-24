@@ -1,16 +1,12 @@
-# inside solr
-solr/LICENSE.txt
-solr/NOTICE.txt
-solr/README.txt
-solr/etc/
-solr/work/
-solr/lib/
-solr/solr/README.txt
-solr/solr/solr.xml
-solr/start.jar
-solr/webapps/
-solr/solr/data/*
+# internal solr
+solr/bin
+solr/contrib
+solr/dist
+solr/server
+# cores
+solr/*/data
 
+# 
 Gemfile.lock
 test/solr
 test/tmp
@@ -20,14 +16,16 @@ acts_as_solr_reloaded-*.gem
 *.log
 *_pid
 
+# testing data
 coverage
 coverage/*
 coverage.data
 test/db/*.db
 test/log/*.log
 pkg/*
-*.sw?
 rdoc
 pkg
 tags
-.svn
+
+#editors
+*.sw?

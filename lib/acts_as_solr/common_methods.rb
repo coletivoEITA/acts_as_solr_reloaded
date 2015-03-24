@@ -36,6 +36,7 @@ module ActsAsSolr #:nodoc:
     end
 
     def solr_batch_add_association(ar, association)
+      return unless ar
       result = ar.send(association)
       result = [result] unless result.is_a?(Array)
       solr_batch_add result
@@ -71,8 +72,8 @@ module ActsAsSolr #:nodoc:
     end
 
     # Returns the id for the given instance
-    def record_id(object)
-      eval "object.#{object.class.primary_key}"
+    def record_id object
+      object.send object.class.primary_key
     end
   end
 end

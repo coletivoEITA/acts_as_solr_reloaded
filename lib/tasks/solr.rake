@@ -1,17 +1,17 @@
 namespace :solr do
 
   APACHE_MIRROR = ENV['APACHE_MIRROR'] || "https://archive.apache.org/dist"
-  SOLR_VERSION = '3.6.2'
-  SOLR_FILENAME = "apache-solr-#{SOLR_VERSION}.tgz"
-  SOLR_MD5SUM = 'e9c51f51265b070062a9d8ed50b84647'
+  SOLR_VERSION = '5.0.0'
+  SOLR_FILENAME = "solr-#{SOLR_VERSION}.tgz"
+  SOLR_MD5SUM = '9458fda5e876b3ada34f4bd680e15ea7'
   SOLR_URL = "#{APACHE_MIRROR}/lucene/solr/#{SOLR_VERSION}/#{SOLR_FILENAME}"
-  SOLR_DIR = "apache-solr-#{SOLR_VERSION}"
+  SOLR_DIR = "solr-#{SOLR_VERSION}"
 
   # change path if it is on testing environment
   PLUGIN_ROOT = File.expand_path("#{File.dirname(__FILE__)}/../..")
 
   def solr_downloaded?
-    File.exists?("#{PLUGIN_ROOT}/solr/start.jar")
+    File.exists?("#{PLUGIN_ROOT}/solr/server/start.jar")
   end
 
   desc "Download and install Solr+Jetty #{SOLR_VERSION}."
@@ -34,43 +34,45 @@ namespace :solr do
       sh "echo \"#{SOLR_MD5SUM}  #{SOLR_FILENAME}\" | md5sum -c -" do |ok, res|
         abort "MD5SUM do not match" if !ok
 
-        sh "tar xzf #{SOLR_FILENAME}"
-        cd "apache-solr-#{SOLR_VERSION}/example"
+        sh "tar xzf #{SOLR_FILENAME} -C /tmp"
 
-        cp_r ['../LICENSE.txt', '../NOTICE.txt', 'README.txt', 'etc', 'lib', 'start.jar', 'webapps', 'work'], "#{PLUGIN_ROOT}/solr", :verbose => true
-        cd 'solr'
-        cp_r ['README.txt', 'bin', 'solr.xml'], "#{PLUGIN_ROOT}/solr/solr", :verbose => true
+        cd "/tmp/#{SOLR_DIR}"
+        cp_r %w[bin contrib dist server], "#{PLUGIN_ROOT}/solr", verbose: true
+        rm_rf "/tmp/#{SOLR_DIR}"
       end
     end
   end
 
   desc 'Remove Solr instalation from the tree.'
   task :remove do
-    solr_root = "#{PLUGIN_ROOT}/solr/"
-    rm_r ['README.txt', 'bin', 'solr.xml'].map{ |i| File.join(solr_root, 'solr', i) }, :verbose => true, :force => true
-    rm_r ['LICENSE.txt', 'NOTICE.txt', 'README.txt', 'etc', 'lib', 'start.jar', 'webapps', 'work'].map{ |i| File.join(solr_root, i) }, :verbose => true, :force => true
+    solr_root = "#{PLUGIN_ROOT}/solr"
+    rm_rf %w[bin contrib dist server].map{ |i| File.join solr_root, i }, verbose: true
   end
 
   desc 'Update to the newest supported version of solr'
-  task :update => [:remove, :download] do
+  task update: [:remove, :download] do
   end
 
   desc 'Starts Solr. Options accepted: RAILS_ENV=your_env, PORT=XX. Defaults to development if none.'
   task :start do
     if !solr_downloaded?
       puts "ERROR: Can't find Solr on the source code! Please run 'rake solr:download'."
-      return
+      abort
     end
 
-    require File.expand_path(File.dirname(__FILE__) + '/../../config/solr_environment')
+    require File.expand_path "#{File.dirname __FILE__}/../../config/solr_environment"
 
-    FileUtils.mkdir_p(SOLR_LOGS_PATH)
-    FileUtils.mkdir_p(SOLR_DATA_PATH)
-    FileUtils.mkdir_p(SOLR_PIDS_PATH)
+    FileUtils.mkdir_p SOLR_LOGS_PATH
+    FileUtils.mkdir_p SOLR_DATA_PATH
+    FileUtils.mkdir_p SOLR_PIDS_PATH
+
+    Dir["#{SOLR_PATH}/{#{SOLR_CORE},solr.xml}"].each do |file|
+      ln_sf file, SOLR_DATA_PATH, verbose: false
+    end
 
     # test if there is a solr already running
     begin
-      n = Net::HTTP.new('127.0.0.1', SOLR_PORT)
+      n = Net::HTTP.new '127.0.0.1', SOLR_PORT
       n.request_head('/').value
 
     rescue Net::HTTPServerException #responding
@@ -80,8 +82,10 @@ namespace :solr do
       # there's an issue with Net::HTTP.request where @socket is nil and raises a NoMethodError
       # http://redmine.ruby-lang.org/issues/show/2708
       Dir.chdir(SOLR_PATH) do
-        cmd = "java #{SOLR_JVM_OPTIONS} -Djetty.logs=\"#{SOLR_LOGS_PATH}\" -Dsolr.solr.home=\"#{SOLR_CONFIG_PATH}\"" +
-          " -Dsolr.data.dir=\"#{SOLR_DATA_PATH}\" -Djetty.host=\"#{SOLR_HOST}\" -Djetty.port=#{SOLR_PORT} -jar start.jar"
+        cmd = <<-CMD
+bin/solr start #{SOLR_OPTIONS} -a "-Djetty.logs=#{SOLR_LOGS_PATH},jetty.port=#{SOLR_PORT}" -s "#{SOLR_DATA_PATH}" -h "#{SOLR_HOST}" -p #{SOLR_PORT} -d #{SOLR_SERVER_PATH}
+        CMD
+        puts cmd
 
         windows = RUBY_PLATFORM =~ /(win|w)32$/
         if windows
@@ -94,7 +98,7 @@ namespace :solr do
           end
         end
 
-        File.open(SOLR_PID_FILE, "w"){ |f| f << pid} unless windows
+        File.write SOLR_PID_FILE, pid unless windows
         puts "#{ENV['RAILS_ENV']} Solr started successfully on #{SOLR_HOST}:#{SOLR_PORT}, pid: #{pid}."
       end
     end
@@ -102,7 +106,7 @@ namespace :solr do
 
   desc 'Stops Solr. Specify the environment by using: RAILS_ENV=your_env. Defaults to development if none.'
   task :stop do
-    require File.expand_path("#{File.dirname(__FILE__)}/../../config/solr_environment")
+    require File.expand_path "#{File.dirname __FILE__}/../../config/solr_environment"
 
     if File.exists?(SOLR_PID_FILE)
       killed = false
@@ -130,8 +134,9 @@ namespace :solr do
   end
 
   desc 'Remove Solr index'
-  task :destroy_index => :environment do
-    require File.expand_path("#{File.dirname(__FILE__)}/../../config/solr_environment")
+  task destroy_index: :environment do
+    require File.expand_path "#{File.dirname __FILE__}/../../config/solr_environment"
+
     raise "In production mode.  I'm not going to delete the index, sorry." if ENV['RAILS_ENV'] == "production"
     if File.exists?("#{SOLR_DATA_PATH}")
       Dir["#{SOLR_DATA_PATH}/index/*"].each{|f| File.unlink(f) if File.exists?(f)}
@@ -143,8 +148,8 @@ namespace :solr do
   # this task is by Henrik Nyh
   # http://henrik.nyh.se/2007/06/rake-task-to-reindex-models-for-acts_as_solr
   desc %{Reindexes data for all acts_as_solr models. Clears index first to get rid of orphaned records and optimizes index afterwards. RAILS_ENV=your_env to set environment. ONLY=book,person,magazine to only reindex those models; EXCEPT=book,magazine to exclude those models. START_SERVER=true to solr:start before and solr:stop after. BATCH=123 to post/commit in batches of that size: default is 300. CLEAR=false to not clear the index first; OPTIMIZE=false to not optimize the index afterwards.}
-  task :reindex => :environment do
-    require File.expand_path("#{File.dirname(__FILE__)}/../../config/solr_environment")
+  task reindex: :environment do
+    require File.expand_path "#{File.dirname __FILE__}/../../config/solr_environment"
 
     delayed_job  = env_to_bool('DELAYED_JOB', false)
     optimize     = env_to_bool('OPTIMIZE', false)
@@ -158,7 +163,6 @@ namespace :solr do
 
     logger = ActiveRecord::Base.logger = Logger.new(STDOUT)
     logger.level = ActiveSupport::BufferedLogger::INFO unless debug_output
-    Dir["#{Rails.root}/app/models/*.rb"].each{ |file| require file }
 
     if start_server
       puts "Starting Solr server..."
@@ -174,15 +178,16 @@ namespace :solr do
     end
 
     models = $solr_indexed_models unless models.count > 0
+    puts "Reindexing #{models.join ', '}..."
     models.each do |model|
       if clear_first
         puts "Clearing index for #{model}..."
-        ActsAsSolr::Post.execute(Solr::Request::Delete.new(:query => "#{model.solr_configuration[:type_field]}:#{model.name.gsub ':', "\\:"}"))
+        ActsAsSolr::Post.execute(Solr::Request::Delete.new(query: "#{model.solr_configuration[:type_field]}:#{model.name.gsub ':', "\\:"}"))
         ActsAsSolr::Post.execute(Solr::Request::Commit.new)
       end
 
       puts "Rebuilding index for #{model}..."
-      model.rebuild_solr_index batch_size, :offset => offset, :threads => threads, :delayed_job => delayed_job
+      model.rebuild_solr_index batch_size, offset: offset, threads: threads, delayed_job: delayed_job
       puts "Commiting changes..."
       ActsAsSolr::Post.execute(Solr::Request::Commit.new)
     end

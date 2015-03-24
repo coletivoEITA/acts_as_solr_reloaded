@@ -1,30 +1,39 @@
 ENV['RAILS_ENV'] = (ENV['RAILS_ENV'] || 'development').dup
+
 require "uri"
 require "fileutils"
 require "yaml"
 require 'net/http'
+require 'rails'
 
-dir = File.dirname(__FILE__)
-SOLR_PATH = File.expand_path("#{dir}/../solr") unless defined? SOLR_PATH
-config = YAML::load_file("#{Rails.root}/config/solr.yml")
+dir = File.dirname __FILE__
+SOLR_ROOT = Rails.root || File.expand_path("#{dir}/..")
+SOLR_PATH = File.expand_path "#{dir}/../solr" unless defined? SOLR_PATH
+config = YAML::load_file "#{SOLR_ROOT}/config/solr.yml"
 
 unless defined? RAILS_ENV
   RAILS_ENV = ENV['RAILS_ENV']
 end
 unless defined? SOLR_LOGS_PATH
-  SOLR_LOGS_PATH = ENV["SOLR_LOGS_PATH"] || "#{Rails.root}/log"
+  SOLR_LOGS_PATH = ENV["SOLR_LOGS_PATH"] || "#{SOLR_ROOT}/log"
 end
 unless defined? SOLR_PIDS_PATH
-  SOLR_PIDS_PATH = ENV["SOLR_PIDS_PATH"] || "#{Rails.root}/tmp/pids"
+  SOLR_PIDS_PATH = ENV["SOLR_PIDS_PATH"] || "#{SOLR_ROOT}/tmp/pids"
 end
 unless defined? SOLR_DATA_PATH
-  SOLR_DATA_PATH = ENV["SOLR_DATA_PATH"] || config[ENV['RAILS_ENV']]['data_path'] || "#{Rails.root}/solr/#{ENV['RAILS_ENV']}"
+  SOLR_DATA_PATH = ENV["SOLR_DATA_PATH"] || config[ENV['RAILS_ENV']]['data_path'] || "#{SOLR_ROOT}/solr/#{ENV['RAILS_ENV']}"
 end
 unless defined? SOLR_CONFIG_PATH
-  SOLR_CONFIG_PATH = ENV["SOLR_CONFIG_PATH"] || "#{SOLR_PATH}/solr"
+  SOLR_CONFIG_PATH = ENV["SOLR_CONFIG_PATH"] || "#{SOLR_PATH}/conf"
+end
+unless defined? SOLR_SERVER_PATH
+  SOLR_SERVER_PATH = ENV["SOLR_CORE_PATH"] || "#{SOLR_PATH}/server"
 end
 unless defined? SOLR_PID_FILE
-  SOLR_PID_FILE="#{SOLR_PIDS_PATH}/solr.#{ENV['RAILS_ENV']}.pid"
+  SOLR_PID_FILE ="#{SOLR_PIDS_PATH}/solr.#{ENV['RAILS_ENV']}.pid"
+end
+unless defined? SOLR_CORE
+  SOLR_CORE = ENV["SOLR_CORE"] || "default_core"
 end
 
 unless defined? SOLR_PORT
@@ -34,7 +43,7 @@ unless defined? SOLR_PORT
   SOLR_PORT = ENV['PORT'] || URI.parse(config[ENV['RAILS_ENV']]['url']).port
 end
 
-SOLR_JVM_OPTIONS = config[ENV['RAILS_ENV']]['jvm_options'] unless defined? SOLR_JVM_OPTIONS
+SOLR_OPTIONS = config[ENV['RAILS_ENV']]['options'] unless defined? SOLR_OPTIONS
 
 if ENV["RAILS_ENV"] == 'test'
   require "active_record"

@@ -13,6 +13,10 @@
 # TODO: add a convenience method to POST a Solr .xml file, like Solr's example post.sh
 
 class Solr::Connection
+
+  # make this configurable
+  SOLR_CORE = 'default_core'
+
   attr_reader :url, :autocommit, :connection
 
   # create a connection to a solr instance using the url for the solr
@@ -20,10 +24,10 @@ class Solr::Connection
   #
   #   conn = Solr::Connection.new("http://example.com:8080/solr")
   #
-  # if you would prefer to have all adds/updates autocommitted, 
+  # if you would prefer to have all adds/updates autocommitted,
   # use :autocommit => :on
   #
-  #   conn = Solr::Connection.new('http://example.com:8080/solr', 
+  #   conn = Solr::Connection.new('http://example.com:8080/solr',
   #     :autocommit => :on)
 
   def initialize(url="http://localhost:8983/solr", opts={})
@@ -31,16 +35,16 @@ class Solr::Connection
     unless @url.kind_of? URI::HTTP
       raise "invalid http url: #{url}"
     end
-  
+
     # TODO: Autocommit seems nice at one level, but it currently is confusing because
     # only calls to Connection#add/#update/#delete, though a Connection#send(AddDocument.new(...))
     # does not autocommit.  Maybe #send should check for the request types that require a commit and
     # commit in #send instead of the individual methods?
     @autocommit = opts[:autocommit] == :on
-  
+
     # Not actually opening the connection yet, just setting up the persistent connection.
     @connection = Net::HTTP.new(@url.host, @url.port)
-  
+
     @connection.read_timeout = opts[:timeout].to_i || 0
     @username = opts[:username] if opts[:username]
     @password = opts[:password] if opts[:password]
@@ -72,7 +76,7 @@ class Solr::Connection
   # performs a standard query and returns a Solr::Response::Standard
   #
   #   response = conn.query('borges')
-  # 
+  #
   # alternative you can pass in a block and iterate over hits
   #
   #   conn.query('borges') do |hit|
@@ -80,7 +84,7 @@ class Solr::Connection
   #   end
   #
   # options include:
-  # 
+  #
   #   :sort, :default_field, :rows, :filter_queries, :debug_query,
   #   :explain_other, :facets, :highlighting, :mlt,
   #   :operator         => :or / :and
@@ -91,13 +95,13 @@ class Solr::Connection
     # TODO: Shouldn't this return an exception if the Solr status is not ok?  (rather than true/false).
     create_and_send_query(Solr::Request::Standard, options.update(:query => query), &action)
   end
-  
+
   # performs a dismax search and returns a Solr::Response::Standard
   #
   #   response = conn.search('borges')
-  # 
+  #
   # options are same as query, but also include:
-  # 
+  #
   #   :tie_breaker, :query_fields, :minimum_match, :phrase_fields,
   #   :phrase_slop, :boost_query, :boost_functions
 
@@ -116,7 +120,7 @@ class Solr::Connection
     response = send(Solr::Request::Optimize.new)
     return response.ok?
   end
-  
+
   # pings the connection and returns true/false if it is alive or not
   def ping
     begin
@@ -140,11 +144,11 @@ class Solr::Connection
     commit if @autocommit
     response.ok?
   end
-  
+
   def info
     send(Solr::Request::IndexInfo.new)
   end
-  
+
   # send a given Solr::Request and return a RubyResponse or XmlResponse
   # depending on the type of request
   def send(request)
@@ -155,26 +159,26 @@ class Solr::Connection
   # send the http post request to solr; for convenience there are shortcuts
   # to some requests: add(), query(), commit(), delete() or send()
   def post(request)
-    req = Net::HTTP::Post.new(@url.path + "/" + request.handler,
-      { "Content-Type" => request.content_type })
+    path = "#{@url.path}/#{SOLR_CORE}/#{request.handler}"
+    req = Net::HTTP::Post.new path, "Content-Type" => request.content_type
     req.basic_auth(@username, @password) if @username && @password
-    response = @connection.request(req, request.to_s)
-  
+    response = @connection.request req, request.to_s
+
     case response
     when Net::HTTPSuccess then response.body
     else
       response.error!
     end
-  
+
   end
-  
+
 private
-  
+
   def create_and_send_query(klass, options = {}, &action)
     request = klass.new(options)
     response = send(request)
     return response unless action
     response.each {|hit| action.call(hit)}
   end
-  
+
 end
