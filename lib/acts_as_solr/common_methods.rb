@@ -54,7 +54,8 @@ module ActsAsSolr #:nodoc:
 
     # Sends the commit command to Solr
     def solr_commit
-      ActsAsSolr::Post.execute(Solr::Request::Commit.new)
+      return if ActsAsSolr.near_real_time_search
+      ActsAsSolr::Post.execute Solr::Request::Commit.new
     end
 
     # Optimizes the Solr index. Solr says:
