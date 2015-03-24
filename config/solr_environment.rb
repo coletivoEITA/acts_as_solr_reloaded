@@ -6,8 +6,8 @@ require "yaml"
 require 'net/http'
 require 'rails'
 
-dir = File.dirname __FILE__
-SOLR_BASE = Rails.root || File.expand_path("#{dir}/..")
+ACTS_AS_SOLR_ROOT = File.expand_path "#{File.dirname(__FILE__)}/.."
+SOLR_BASE = Rails.root || ACTS_AS_SOLR_ROOT
 SOLR_PATH = "#{SOLR_BASE}/solr" unless defined? SOLR_PATH
 config = YAML::load_file "#{SOLR_BASE}/config/solr.yml"
 

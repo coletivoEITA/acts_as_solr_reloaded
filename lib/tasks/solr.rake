@@ -62,7 +62,7 @@ namespace :solr do
     FileUtils.mkdir_p SOLR_DATA_PATH
     FileUtils.mkdir_p SOLR_PIDS_PATH
 
-    Dir["#{SOLR_PATH}/{#{SOLR_CORE},solr.xml}"].each do |file|
+    Dir["#{ACTS_AS_SOLR_ROOT}/solr/{#{SOLR_CORE},solr.xml}"].each do |file|
       ln_sf file, SOLR_DATA_PATH, verbose: false
     end
 
