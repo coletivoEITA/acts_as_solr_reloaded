@@ -7,21 +7,21 @@ require 'net/http'
 require 'rails'
 
 dir = File.dirname __FILE__
-SOLR_ROOT = Rails.root || File.expand_path("#{dir}/..")
-SOLR_PATH = File.expand_path "#{dir}/../solr" unless defined? SOLR_PATH
-config = YAML::load_file "#{SOLR_ROOT}/config/solr.yml"
+SOLR_BASE = Rails.root || File.expand_path("#{dir}/..")
+SOLR_PATH = "#{SOLR_BASE}/solr" unless defined? SOLR_PATH
+config = YAML::load_file "#{SOLR_BASE}/config/solr.yml"
 
 unless defined? RAILS_ENV
   RAILS_ENV = ENV['RAILS_ENV']
 end
 unless defined? SOLR_LOGS_PATH
-  SOLR_LOGS_PATH = ENV["SOLR_LOGS_PATH"] || "#{SOLR_ROOT}/log"
+  SOLR_LOGS_PATH = ENV["SOLR_LOGS_PATH"] || "#{SOLR_BASE}/log"
 end
 unless defined? SOLR_PIDS_PATH
-  SOLR_PIDS_PATH = ENV["SOLR_PIDS_PATH"] || "#{SOLR_ROOT}/tmp/pids"
+  SOLR_PIDS_PATH = ENV["SOLR_PIDS_PATH"] || "#{SOLR_BASE}/tmp/pids"
 end
 unless defined? SOLR_DATA_PATH
-  SOLR_DATA_PATH = ENV["SOLR_DATA_PATH"] || config[ENV['RAILS_ENV']]['data_path'] || "#{SOLR_ROOT}/solr/#{ENV['RAILS_ENV']}"
+  SOLR_DATA_PATH = ENV["SOLR_DATA_PATH"] || config[ENV['RAILS_ENV']]['data_path'] || "#{SOLR_BASE}/solr/#{ENV['RAILS_ENV']}"
 end
 unless defined? SOLR_CONFIG_PATH
   SOLR_CONFIG_PATH = ENV["SOLR_CONFIG_PATH"] || "#{SOLR_PATH}/conf"
