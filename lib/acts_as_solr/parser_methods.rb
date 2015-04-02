@@ -14,13 +14,13 @@ module ActsAsSolr #:nodoc:
       # defaults
       options[:results_format] ||= :objects
       options[:default_field] ||= 'text'
-
       query_options = {}
       query_options[:default_field] = options[:default_field]
-
-      return if query.nil?
-      raise "Query should be a string" unless query.is_a?(String)
       raise "Invalid parameters: #{(options.keys - valid_options).join(',')}" unless (options.keys - valid_options).empty?
+
+      query = query.to_s if query.nil?
+      raise "Query should be a string" unless query.is_a?(String)
+
       begin
         Deprecation.validate_query(options)
 
