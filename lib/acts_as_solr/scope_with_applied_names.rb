@@ -21,8 +21,10 @@ if Rails::VERSION::STRING >= "3.2"
               options = scoped.apply_finder_options(options) if options.is_a?(Hash)
 
               relation = scoped.merge(options)
-              relation.scopes_applied ||= Set.new
-              relation.scopes_applied << name
+              if relation.respond_to? :scopes_applied
+                relation.scopes_applied ||= Set.new
+                relation.scopes_applied << name
+              end
 
               extension ? relation.extending(extension) : relation
             end
