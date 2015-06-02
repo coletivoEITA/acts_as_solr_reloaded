@@ -36,7 +36,8 @@ module ActsAsSolr #:nodoc:
           query = sanitize_query query
           # priorize exact matchs, see http://stackoverflow.com/questions/20526342/solr-fuzzy-match-has-better-score-than-exact-match
           # done on `ngramText` as it don't work on `text` (unknown reason)
-          query = "ngramText:\"#{query}\" OR (#{query})"
+          # FIXME: this returns all results on all searches, need another way to improve exact match
+          #query = "ngramText:\"#{query}\" OR (#{query})"
 
           query_options[:filter_queries] << solr_type_condition(options)
 
