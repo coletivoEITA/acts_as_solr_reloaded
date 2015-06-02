@@ -33,7 +33,11 @@ module ActsAsSolr #:nodoc:
         if query.blank?
           query = solr_type_condition(options)
         else
-          query = sanitize_query(query)
+          query = sanitize_query query
+          # priorize exact matchs, see http://stackoverflow.com/questions/20526342/solr-fuzzy-match-has-better-score-than-exact-match
+          # done on `ngramText` as it don't work on `text` (unknown reason)
+          query = "ngramText:\"#{query}\" OR (#{query})"
+
           query_options[:filter_queries] << solr_type_condition(options)
 
           # put types on filtered fields
@@ -47,10 +51,7 @@ module ActsAsSolr #:nodoc:
         query = "#{options[:alternate_query]} #{query}" unless options[:alternate_query].blank?
 
         query = add_relevance query, options[:relevance]
-
-        # priorize exact matchs, see http://stackoverflow.com/questions/20526342/solr-fuzzy-match-has-better-score-than-exact-match
-        # done on `ngramText` as it don't work on `text` (unknown reason)
-        query_options[:query] = "ngramText:\"#{query}\" OR (#{query})"
+        query_options[:query] = query
 
         field_list = options[:models].nil? ? solr_configuration[:primary_key_field] : "id"
         query_options[:field_list] = [field_list, 'score']
