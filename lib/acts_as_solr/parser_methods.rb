@@ -7,11 +7,13 @@ module ActsAsSolr #:nodoc:
       valid_options = [
         :models, :lazy, :core, :results_format, :sql_options,
         :alternate_query, :boost_functions, :filter_queries, :facets, :sort,
-        :scores, :operator, :latitude, :longitude, :radius, :relevance, :highlight,
+        :scores, :latitude, :longitude, :radius, :relevance, :highlight,
         :offset, :per_page, :limit, :page,
+        :operator, :handler,
         :query_fields, :default_field,
       ]
       # defaults
+      options[:handler] ||= :edismax
       options[:results_format] ||= :objects
       options[:default_field] ||= 'text'
       query_options = {}
@@ -46,7 +48,9 @@ module ActsAsSolr #:nodoc:
 
         query = add_relevance query, options[:relevance]
 
-        query_options[:query] = query
+        # priorize exact matchs, see http://stackoverflow.com/questions/20526342/solr-fuzzy-match-has-better-score-than-exact-match
+        # done on `ngramText` as it don't work on `text` (unknown reason)
+        query_options[:query] = "ngramText:\"#{query}\" OR (#{query})"
 
         field_list = options[:models].nil? ? solr_configuration[:primary_key_field] : "id"
         query_options[:field_list] = [field_list, 'score']
@@ -65,7 +69,7 @@ module ActsAsSolr #:nodoc:
         parse_query_fields query_options, options
 
         query_options[:operator] = options[:operator]
-        not_dismax = query_options[:operator] == :or
+        not_dismax = options[:operator] == :or or options[:handler] != :edismax
         request = if not_dismax then Solr::Request::Standard.new(query_options) else Solr::Request::Dismax.new query_options end
         ActsAsSolr::Post.execute request, options[:core]
       rescue
