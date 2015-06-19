@@ -10,7 +10,7 @@ namespace :solr do
   require File.expand_path "#{File.dirname __FILE__}/../../config/solr_environment"
 
   def solr_downloaded?
-    File.exists?("#{SOLR_PATH}/server/start.jar")
+    File.exists? "#{SOLR_PATH}/server/start.jar"
   end
 
   desc "Download and install Solr+Jetty #{SOLR_VERSION}."
@@ -59,11 +59,15 @@ namespace :solr do
     end
 
     FileUtils.mkdir_p SOLR_LOGS_PATH
-    FileUtils.mkdir_p SOLR_DATA_PATH
     FileUtils.mkdir_p SOLR_PIDS_PATH
+    FileUtils.mkdir_p SOLR_DATA_PATH
+    FileUtils.mkdir_p SOLR_CORE_PATH
 
-    Dir["#{ACTS_AS_SOLR_ROOT}/solr/{#{SOLR_CORE},solr.xml}"].each do |file|
+    Dir["#{ACTS_AS_SOLR_ROOT}/solr/solr.xml"].each do |file|
       ln_sf file, SOLR_DATA_PATH, verbose: false
+    end
+    Dir["#{ACTS_AS_SOLR_CORE_PATH}/{conf,core.properties}"].each do |file|
+      ln_sf file, SOLR_CORE_PATH, verbose: false
     end
 
     # test if there is a solr already running

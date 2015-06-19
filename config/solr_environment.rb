@@ -27,13 +27,19 @@ unless defined? SOLR_CONFIG_PATH
   SOLR_CONFIG_PATH = ENV["SOLR_CONFIG_PATH"] || "#{SOLR_PATH}/conf"
 end
 unless defined? SOLR_SERVER_PATH
-  SOLR_SERVER_PATH = ENV["SOLR_CORE_PATH"] || "#{SOLR_PATH}/server"
+  SOLR_SERVER_PATH = ENV["SOLR_SERVER_PATH"] || "#{SOLR_PATH}/server"
 end
 unless defined? SOLR_PID_FILE
   SOLR_PID_FILE ="#{SOLR_PIDS_PATH}/solr.#{ENV['RAILS_ENV']}.pid"
 end
 unless defined? SOLR_CORE
   SOLR_CORE = ENV["SOLR_CORE"] || "default_core"
+end
+unless defined? SOLR_CORE_PATH
+  SOLR_CORE_PATH = ENV["SOLR_CORE_PATH"] || "#{SOLR_DATA_PATH}/#{SOLR_CORE}"
+end
+unless defined? ACTS_AS_SOLR_CORE_PATH
+  ACTS_AS_SOLR_CORE_PATH = ENV["SOLR_CORE_PATH"] || "#{ACTS_AS_SOLR_ROOT}/solr/default_core"
 end
 
 unless defined? SOLR_PORT
