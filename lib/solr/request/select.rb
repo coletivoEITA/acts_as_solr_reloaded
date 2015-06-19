@@ -48,7 +48,6 @@ class Solr::Request::Select < Solr::Request::Base
       end
     end
 
-    pp http_params
     http_params.join("&")
   end
 
