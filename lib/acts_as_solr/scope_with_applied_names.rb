@@ -1,5 +1,7 @@
 
-if Rails::VERSION::STRING >= "3.2"
+if Rails::VERSION::STRING >= "4.1"
+  require 'active_record/scoping/named'
+
   module ::ActiveRecord
 
     class Relation
@@ -9,7 +11,53 @@ if Rails::VERSION::STRING >= "3.2"
     module Scoping
       module Named
         module ClassMethods
-          attr_accessor :scope_name, :scopes_applied
+          attr_accessor :scopes_applied
+
+          def scope_with_applied_names name, body, &block
+            unless body.respond_to?(:call)
+              raise ArgumentError, 'The scope body needs to be callable.'
+            end
+
+            if dangerous_class_method?(name)
+              raise ArgumentError, "You tried to define a scope named \"#{name}\" " \
+                "on the model \"#{self.name}\", but Active Record already defined " \
+                "a class method with the same name."
+            end
+
+            extension = Module.new(&block) if block
+
+            singleton_class.send :define_method, name do |*args|
+              scope = all.scoping { body.call(*args) }
+              scope = scope.extending(extension) if extension
+              scope ||= all
+
+              if scope.respond_to? :scopes_applied
+                scope.scopes_applied ||= Set.new
+                scope.scopes_applied << name
+              end
+
+              scope
+            end
+
+          end
+          alias_method_chain :scope, :applied_names
+        end
+      end
+    end
+  end
+elsif Rails::VERSION::STRING >= "3.2"
+  require 'active_record/scoping/named'
+
+  module ::ActiveRecord
+
+    class Relation
+      attr_accessor :scopes_applied
+    end
+
+    module Scoping
+      module Named
+        module ClassMethods
+          attr_accessor :scopes_applied
 
           def scope_with_applied_names name, scope_options = {}
             name = name.to_sym
@@ -38,7 +86,7 @@ if Rails::VERSION::STRING >= "3.2"
     end
   end
 else
-  require_dependency 'active_record/named_scope'
+  require 'active_record/named_scope'
 
   module ::ActiveRecord
     module NamedScope

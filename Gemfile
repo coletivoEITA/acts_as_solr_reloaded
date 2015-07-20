@@ -4,7 +4,7 @@ gem 'rdoc'
 
 gem 'jeweler'
 
-gem 'rails', '~> 3.2.21'
+gem 'rails', '~> 4.2.3'
 
 gem 'sqlite3'
 
