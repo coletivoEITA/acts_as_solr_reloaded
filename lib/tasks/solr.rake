@@ -159,7 +159,7 @@ bin/solr start #{SOLR_OPTIONS} -a "-Djetty.logs=#{SOLR_LOGS_PATH},jetty.port=#{S
     threads      = (ENV['THREADS'] || '2').to_i
 
     logger = ActiveRecord::Base.logger = Logger.new(STDOUT)
-    logger.level = ActiveSupport::BufferedLogger::INFO unless debug_output
+    logger.level = 1 unless debug_output #logger level: info
 
     if start_server
       puts "Starting Solr server..."
