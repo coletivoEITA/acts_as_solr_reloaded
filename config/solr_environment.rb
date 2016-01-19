@@ -21,7 +21,13 @@ unless defined? SOLR_PIDS_PATH
   SOLR_PIDS_PATH = ENV["SOLR_PIDS_PATH"] || "#{SOLR_BASE}/tmp/pids"
 end
 unless defined? SOLR_DATA_PATH
-  SOLR_DATA_PATH = ENV["SOLR_DATA_PATH"] || config[ENV['RAILS_ENV']]['data_path'] || "#{SOLR_BASE}/solr/#{ENV['RAILS_ENV']}"
+  env_data_path = nil
+  begin
+    env_data_path = config[ENV['RAILS_ENV']]['data_path']
+  rescue => e
+    env_data_path = nil
+  end
+  SOLR_DATA_PATH = ENV["SOLR_DATA_PATH"] || env_data_path || "#{SOLR_BASE}/solr/#{ENV['RAILS_ENV']}"
 end
 unless defined? SOLR_CONFIG_PATH
   SOLR_CONFIG_PATH = ENV["SOLR_CONFIG_PATH"] || "#{SOLR_PATH}/conf"
