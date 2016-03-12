@@ -36,6 +36,7 @@ namespace :solr do
         sh "tar xzf #{SOLR_FILENAME} -C /tmp"
 
         cd "/tmp/#{SOLR_DIR}"
+        mkdir_p SOLR_PATH
         cp_r %w[bin contrib dist server], SOLR_PATH, verbose: true
         rm_rf "/tmp/#{SOLR_DIR}"
       end
