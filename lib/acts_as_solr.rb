@@ -7,7 +7,6 @@ require 'erb'
 require 'rexml/xpath'
 
 require_relative 'solr'
-require_relative 'acts_as_solr/railtie'
 require_relative 'acts_as_solr/acts_methods'
 require_relative 'acts_as_solr/common_methods'
 require_relative 'acts_as_solr/parser_methods'
