@@ -206,10 +206,8 @@ module ActsAsSolr #:nodoc:
     # If a finder block is given, it will be called to retrieve the items to index.
     # This can be very useful for things such as updating based on conditions or
     # using eager loading for indexed associations.
-    def rebuild_solr_index(batch_size=300, options = {}, &finder)
-      finder ||= lambda do |ar, sql_options|
-        ar.all sql_options.merge!({:order => self.primary_key})
-      end
+    def rebuild_solr_index(batch_size=300, options = {}, &scope)
+      scope ||= self
       start_time = Time.now
       options[:offset] ||= 0
       options[:threads] ||= 2
@@ -223,7 +221,12 @@ module ActsAsSolr #:nodoc:
         mutex = Mutex.new
         queue = Queue.new
         loop do
-          items = finder.call(self, {:limit => batch_size, :offset => offset})
+          items = scope
+            .order(self.primary_key)
+            .limit(batch_size)
+            .offset(offset)
+            .all
+
           add_batch = items.collect { |content| content.to_solr_doc }
           offset += items.size
           end_reached = items.size == 0
