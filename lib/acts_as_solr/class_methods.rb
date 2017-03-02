@@ -223,7 +223,12 @@ module ActsAsSolr #:nodoc:
         mutex = Mutex.new
         queue = Queue.new
         loop do
-          items = finder.call(self, {:limit => batch_size, :offset => offset})
+          items = scope
+            .order(self.primary_key)
+            .limit(batch_size)
+            .offset(offset)
+            .all
+
           add_batch = items.collect { |content| content.to_solr_doc }
           offset += items.size
           end_reached = items.size == 0
