@@ -5,7 +5,7 @@ module ActsAsSolr #:nodoc:
     # Method used by mostly all the ClassMethods when doing a search
     def parse_query(query=nil, options={})
       valid_options = [
-        :models, :lazy, :core, :results_format, :sql_options,
+        :models, :lazy, :core, :results_format,
         :alternate_query, :boost_functions, :filter_queries, :facets, :sort,
         :scores, :latitude, :longitude, :radius, :relevance, :highlight,
         :offset, :per_page, :limit, :page,
@@ -210,14 +210,8 @@ module ActsAsSolr #:nodoc:
       if options[:lazy] && options[:results_format] == :objects
         ids.collect{ |id| ActsAsSolr::LazyDocument.new(id, self) }
       elsif options[:results_format] == :objects
-        find_options = options[:sql_options] || {}
-        if Rails::VERSION::STRING >= '3.0'
-          result = self.scoped(find_options).where(self.primary_key => ids).all
-        else
-          find_options[:conditions] = self.send :merge_conditions, {self.primary_key => ids}, (find_options[:conditions] || [])
-          result = self.all(find_options)
-        end
-        result = reorder(result, ids) unless find_options[:order]
+        result = self.where(self.primary_key => ids).all
+        result = reorder result, ids
         result
       elsif options[:results_format] == :none
         []
