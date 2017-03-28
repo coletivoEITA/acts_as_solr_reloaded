@@ -37,8 +37,7 @@ module ActsAsSolr #:nodoc:
 
     def solr_batch_add_association(ar, association)
       return unless ar
-      result = ar.send(association)
-      result = [result] unless result.is_a?(Array)
+      result = Array ar.send association
       solr_batch_add result
     end
 
