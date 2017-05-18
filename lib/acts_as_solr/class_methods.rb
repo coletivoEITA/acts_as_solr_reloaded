@@ -199,17 +199,9 @@ module ActsAsSolr #:nodoc:
     #  Book.rebuild_solr_index
     #
     # If batch_size is greater than 0, adds will be done in batches.
-    # NOTE: If using sqlserver, be sure to use a finder with an explicit order.
-    # Non-edge versions of rails do not handle pagination correctly for sqlserver
-    # without an order clause.
     #
-    # If a finder block is given, it will be called to retrieve the items to index.
-    # This can be very useful for things such as updating based on conditions or
-    # using eager loading for indexed associations.
-    def rebuild_solr_index(batch_size=300, options = {}, &finder)
-      finder ||= lambda do |ar, sql_options|
-        ar.order self.primary_key
-      end
+    def rebuild_solr_index batch_size=300, options = {}
+      scope      = self.order self.primary_key
       start_time = Time.now
       options[:offset] ||= 0
       options[:threads] ||= 2
@@ -272,7 +264,7 @@ module ActsAsSolr #:nodoc:
         solr_commit if options[:delayed_job]
         threads.each{ |t| t.join }
       else
-        items = finder.call(self, {})
+        items = scope
         items.each { |content| content.solr_save }
         items_processed = items.size
       end
